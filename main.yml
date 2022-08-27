@@ -110,8 +110,9 @@
         job: "/usr/bin/certbot renew --quiet"
 
     - name: Restart NGINX
-        service: nginx
-        state: restarted
+        service: 
+          name: nginx
+          state: restarted
       become: yes
 
     # Firewall
