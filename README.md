@@ -5,7 +5,7 @@ A [WIP] blueprint to automate the deployment of strapi servers.
 ### What it does
 - setup passwordless sudo
 - creates sudo user
-- copy ssh key
+- copy ssh key to remote
 - disable root password auth
 - apt install `curl`, `vim`, `git`, `ufw`, `build-essentials`, `nginx`, `certbot`, & `python3-certbot-nginx`
 - install `nvm`
