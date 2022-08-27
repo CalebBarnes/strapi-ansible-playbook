@@ -1,0 +1,28 @@
+#--------node
+    # - name: Get current node version
+    #   shell: ". ~/.nvm/nvm.sh && node -v"
+    #   register: detected_node_version
+    #   args:
+    #     chdir: "/home/{{ created_username }}"
+    #     executable: /bin/bash
+    #   become_user: "{{ created_username }}"
+    #   become: true
+
+    # - name: debug detected_node_version
+    #   debug:
+    #     msg: "{{ detected_node_version['stdout'] }}"
+
+#--------yarn
+
+    # - name: Get current yarn version
+    #   shell: ". ~/.nvm/nvm.sh && yarn -v"
+    #   register: detected_yarn_version
+    #   args:
+    #     chdir: "/home/{{ created_username }}"
+    #     executable: /bin/bash
+    #   become_user: "{{ created_username }}"
+    #   become: true
+
+    # - name: debug detected_yarn_version
+    #   debug:
+    #     msg: "{{ detected_yarn_version['stdout'] }}"

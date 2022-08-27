@@ -26,6 +26,7 @@
         name: "{{ created_username }}"
         state: present
         groups: sudo
+        shell: /bin/bash
         append: true
         create_home: true
       become: true
@@ -64,78 +65,88 @@
       shell: >
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
       args:
-        creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
-      become_user: "{{ created_user }}"
-
-    - name: Reload bash profile
-      command: "source {{ ansible_env.HOME }}/.bashrc"
-      become_user: "{{ created_user }}"
+        creates: "~/.nvm/nvm.sh"
+      become_user: "{{ created_username }}"
+      become: true
 
     - name: Install node with nvm
-      command: "nvm install {{ node_version }} && nvm alias default {{ node_version }} && nvm use default"
-      become_user: "{{ created_user }}"
+      shell: ". ~/.nvm/nvm.sh && nvm install {{ node_version }} && nvm alias default {{ node_version }} && nvm use default"
+      args:
+        chdir: "/home/{{ created_username }}"
+        executable: /bin/bash
+        creates: "/home/{{ created_username }}/.nvm/versions/node/*/bin/npm"
+      become_user: "{{ created_username }}"
+      become: true
 
     - name: Install yarn
-      npm:
-        name: yarn
-        global: yes
-      become_user: "{{ created_user }}"
+      shell: ". ~/.nvm/nvm.sh && npm install yarn -g"
+      args:
+        chdir: "/home/{{ created_username }}"
+        executable: /bin/bash
+        creates: "~/.nvm/versions/node/*/bin/yarn"
+      become_user: "{{ created_username }}"
+      become: true
 
     - name: Install pm2
-      yarn:
-        name: pm2
-        global: yes
-      become_user: "{{ created_user }}"
+      shell: ". ~/.nvm/nvm.sh && yarn global add pm2"
+      args:
+        chdir: "/home/{{ created_username }}"
+        executable: /bin/bash
+        # creates: "~/.nvm/versions/node/*/bin/yarn"
+      become_user: "{{ created_username }}"
+      become: true
 
-    # NGINX config
-    - name: Create nginx config file from template
-      template:
-        src: /templates/strapi_site.conf.j2 # local src
-        dest: /etc/nginx/sites-available/strapi_site.conf # remote dest
-      become: yes
 
-    - name: Create symlink for NGINX config file
-      file:
-        src: /etc/nginx/sites-available/strapi_site.cfg
-        dest: /etc/nginx/sites-enabled/default
-        state: link
-      become: yes
 
-    - name: Start NGINX
-      service:
-        name: nginx
-        state: started
-      become: yes
+    # # NGINX config
+    # - name: Create nginx config file from template
+    #   template:
+    #     src: /templates/strapi_site.conf.j2 # local src
+    #     dest: /etc/nginx/sites-available/strapi_site.conf # remote dest
+    #   become: yes
 
-    - name: Initialize Certbot with the NGINX plugin
-      command: "sudo certbot --nginx -d {{ ansible_hostname }} -m {{ email }} --noninteractive --agree-tos"
-      become_user: "{{ created_user }}"
+    # - name: Create symlink for NGINX config file
+    #   file:
+    #     src: /etc/nginx/sites-available/strapi_site.cfg
+    #     dest: /etc/nginx/sites-enabled/default
+    #     state: link
+    #   become: yes
 
-    - name: Schedule a cron to run certbot renew at 12pm every day
-      cron:
-        name: "certbot renew"
-        minute: "0"
-        hour: "12"
-        job: "/usr/bin/certbot renew --quiet"
+    # - name: Start NGINX
+    #   service:
+    #     name: nginx
+    #     state: started
+    #   become: yes
 
-    - name: Restart NGINX
-      service:
-        name: nginx
-        state: restarted
-      become: yes
+    # - name: Initialize Certbot with the NGINX plugin
+    #   command: "sudo certbot --nginx -d {{ ansible_hostname }} -m {{ email }} --noninteractive --agree-tos"
+    #   become_user: "{{ created_username }}"
+
+    # - name: Schedule a cron to run certbot renew at 12pm every day
+    #   cron:
+    #     name: "certbot renew"
+    #     minute: "0"
+    #     hour: "12"
+    #     job: "/usr/bin/certbot renew --quiet"
+
+    # - name: Restart NGINX
+    #   service:
+    #     name: nginx
+    #     state: restarted
+    #   become: yes
 
     # Firewall
-    - name: UFW - Allow SSH connections
-      community.general.ufw:
-        rule: allow
-        name: OpenSSH
+    # - name: UFW - Allow SSH connections
+    #   community.general.ufw:
+    #     rule: allow
+    #     name: OpenSSH
 
-    - name: UFW - Allow NGINX connections
-      community.general.ufw:
-        rule: allow
-        name: Nginx Full
+    # - name: UFW - Allow NGINX connections
+    #   community.general.ufw:
+    #     rule: allow
+    #     name: Nginx Full
 
-    - name: UFW - Enable and deny by default
-      community.general.ufw:
-        state: enabled
-        default: deny
+    # - name: UFW - Enable and deny by default
+    #   community.general.ufw:
+    #     state: enabled
+    #     default: deny
