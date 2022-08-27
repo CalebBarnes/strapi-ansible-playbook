@@ -2,7 +2,16 @@
 
 A [WIP] blueprint to automate the deployment of strapi servers.
 
-### What it does
+## Requirements
+- ansible
+- ansible inventory file
+
+Execute the Ansible playbook with a custom inventory file:
+```
+ansible-playbook -i inventory main.yml
+```
+
+## What it does
 - setup passwordless sudo
 - creates sudo user
 - copy ssh key to remote
