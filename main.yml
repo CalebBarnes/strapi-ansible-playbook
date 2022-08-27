@@ -53,6 +53,8 @@
           - ufw
           - build-essential # required for some npm packages to work
           - nginx # the web server we will use to serve our nodejs app
+          - certbot # Let’s Encrypt SSL certificates
+          - python3-certbot-nginx
         state: latest
         update_cache: true
       become: true
@@ -78,34 +80,26 @@
 
     # NGINX config
 
-    - name: create nginx config file from template
+    - name: Create nginx config file from template
       template:
-        src: /templates/nginx/strapi_site.cfg
-        dest: /tmp/generated-strapi-config-template/strapi-site.cfg
-        variable_start_string: "<%"
-        variable_end_string: "%>"
-
-    - name: Creating NGINX config file
-      copy:
-        src: /tmp/generated-strapi-config-template/strapi-site.cfg
-        dest: /etc/nginx/sites-available/strapi_site.cfg
+        src: strapi_site.conf.j2
+        dest: /etc/nginx/sites-available/strapi_site.conf
       become: yes
 
-    # todo: set up certbot with nginx
-    # todo: schedule a cron job to renew the SSL certificate
+    - name: Create symlink for NGINX config file
+      file:
+        src: /etc/nginx/sites-available/strapi_site.cfg
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+      become: yes
 
-    # - name: Start NGINX
-    #   service:
-    #     name: nginx
-    #     state: started
-    #   become: yes # "becomes" sudo
+    - name: Start NGINX
+      service:
+        name: nginx
+        state: started
+      become: yes
 
-    # - name: Create symlink for NGINX config file
-    #   file:
-    #     src: /etc/nginx/sites-available/strapi_site.cfg
-    #     dest: /etc/nginx/sites-enabled/default
-    #     state: link
-    #   become: yes
+    # todo:
 
     # - name: Restart NGINX
     #     service: nginx

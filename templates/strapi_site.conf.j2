@@ -1,5 +1,5 @@
 server {
-    server_name <% ansible_hostname %>;
+    server_name {{ ansible_hostname }};
 
     listen [::]:443 ssl ipv6only=on; # managed by Certbot
     listen 443 ssl; # managed by Certbot
@@ -14,7 +14,7 @@ server {
 }
 
 server {
-    if ($host = <% ansible_hostname %>) {
+    if ($host = {{ ansible_hostname }}) {
         return 301 https://$host$request_uri;
     } # managed by Certbot
 
@@ -22,7 +22,7 @@ server {
     listen 80;
     listen [::]:80;
 
-    server_name <% ansible_hostname %>;
+    server_name {{ ansible_hostname }};
 
     return 404; # managed by Certbot
 }
