@@ -39,5 +39,4 @@ todo:
 - create postgres db
 - clone strapi project github repo from variable
 - set strapi envs to connect it to the postgres db
-- schedule cron to dump postgres db, and then upload to some cloud storage or something?
-- backup media uploads to cloud storage
+- schedule crons to dump postgres db, and then upload to some cloud storage bucket, backup media uploads to cloud storage
