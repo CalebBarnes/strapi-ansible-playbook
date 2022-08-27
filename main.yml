@@ -31,7 +31,7 @@
       become: true
 
     - name: Set authorized key for remote user
-      ansible.posix.authorized_key:
+      authorized_key:
         user: "{{ created_username }}"
         state: present
         key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
@@ -65,19 +65,27 @@
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
       args:
         creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+      become_user: "{{ created_user }}"
 
-    - name: Install node and yarn
+    - name: Reload bash profile
+      command: "source {{ ansible_env.HOME }}/.bashrc"
+      become_user: "{{ created_user }}"
+
+    - name: Install node with nvm
       command: "nvm install {{ node_version }} && nvm alias default {{ node_version }} && nvm use default"
+      become_user: "{{ created_user }}"
 
     - name: Install yarn
       npm:
         name: yarn
         global: yes
+      become_user: "{{ created_user }}"
 
     - name: Install pm2
       yarn:
         name: pm2
         global: yes
+      become_user: "{{ created_user }}"
 
     # NGINX config
     - name: Create nginx config file from template
@@ -101,6 +109,7 @@
 
     - name: Initialize Certbot with the NGINX plugin
       command: "sudo certbot --nginx -d {{ ansible_hostname }} -m {{ email }} --noninteractive --agree-tos"
+      become_user: "{{ created_user }}"
 
     - name: Schedule a cron to run certbot renew at 12pm every day
       cron:
