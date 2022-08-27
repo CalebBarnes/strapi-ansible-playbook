@@ -19,3 +19,11 @@ A [WIP] blueprint to automate the deployment of strapi servers.
 - schedule cron to renew certbot Let's Encrypt certificates
 
 - configure firewall to block everything except for ssh and nginx
+
+
+todo:
+- install postgres
+- create postgres user
+- create postgres db
+- clone strapi project github repo from variable
+- set strapi envs to connect it to the postgres db
