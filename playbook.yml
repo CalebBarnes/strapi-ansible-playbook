@@ -1,0 +1,129 @@
+---
+- hosts: all
+  vars:
+    created_username: caleb
+    node_version: lts/fermium
+  tasks:
+    - name: Install aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+      become: true
+
+    - name: Setup passwordless sudo
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: "^%sudo"
+        line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+        validate: "/usr/sbin/visudo -cf %s"
+      become: true
+
+    - name: Create a new regular user with sudo privileges
+      user:
+        name: "{{ created_username }}"
+        state: present
+        groups: sudo
+        append: true
+        create_home: true
+      become: true
+
+    - name: Set authorized key for remote user
+      ansible.posix.authorized_key:
+        user: "{{ created_username }}"
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+      become: true
+
+    - name: Disable password authentication for root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin prohibit-password"
+      become: true
+
+    - name: Update apt and install required system packages
+      apt:
+        pkg:
+          - curl
+          - vim
+          - git
+          - ufw
+          - build-essential # required for some npm packages to work
+          - nginx # the web server we will use to serve our nodejs app
+        state: latest
+        update_cache: true
+      become: true
+
+    - name: Install nvm
+      shell: >
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+      args:
+        creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+
+    - name: Install node and yarn
+      command: "nvm install {{ node_version }} && nvm alias default {{ node_version }} && nvm use default"
+
+    - name: Install yarn
+      npm:
+        name: yarn
+        global: yes
+
+    - name: Install pm2
+      yarn:
+        name: pm2
+        global: yes
+
+    # NGINX config
+
+    - name: create nginx config file from template
+      template:
+        src: /templates/nginx/strapi_site.cfg
+        dest: /tmp/generated-strapi-config-template/strapi-site.cfg
+        variable_start_string: "<%"
+        variable_end_string: "%>"
+
+    - name: Creating NGINX config file
+      copy:
+        src: /tmp/generated-strapi-config-template/strapi-site.cfg
+        dest: /etc/nginx/sites-available/strapi_site.cfg
+      become: yes
+
+    # todo: set up certbot with nginx
+    # todo: schedule a cron job to renew the SSL certificate
+
+    # - name: Start NGINX
+    #   service:
+    #     name: nginx
+    #     state: started
+    #   become: yes # "becomes" sudo
+
+    # - name: Create symlink for NGINX config file
+    #   file:
+    #     src: /etc/nginx/sites-available/strapi_site.cfg
+    #     dest: /etc/nginx/sites-enabled/default
+    #     state: link
+    #   become: yes
+
+    # - name: Restart NGINX
+    #     service: nginx
+    #     state: restarted
+    #   become: yes
+
+    # Firewall
+    - name: UFW - Allow SSH connections
+      community.general.ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: UFW - Allow NGINX connections
+      community.general.ufw:
+        rule: allow
+        name: Nginx Full
+
+    - name: UFW - Enable and deny by default
+      community.general.ufw:
+        state: enabled
+        default: deny
