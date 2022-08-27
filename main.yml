@@ -82,7 +82,7 @@
 
     - name: Create nginx config file from template
       template:
-        src: strapi_site.conf.j2
+        src: /templates/strapi_site.conf.j2
         dest: /etc/nginx/sites-available/strapi_site.conf
       become: yes
 
