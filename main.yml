@@ -3,6 +3,7 @@
   vars:
     created_username: caleb
     node_version: lts/fermium
+    email: caleb@example.com
   tasks:
     - name: Install aptitude
       apt:
@@ -79,11 +80,10 @@
         global: yes
 
     # NGINX config
-
     - name: Create nginx config file from template
       template:
-        src: /templates/strapi_site.conf.j2
-        dest: /etc/nginx/sites-available/strapi_site.conf
+        src: /templates/strapi_site.conf.j2 # local src
+        dest: /etc/nginx/sites-available/strapi_site.conf # remote dest
       become: yes
 
     - name: Create symlink for NGINX config file
@@ -99,12 +99,20 @@
         state: started
       become: yes
 
-    # todo:
+    - name: Initialize Certbot with the NGINX plugin
+      command: "sudo certbot --nginx -d {{ ansible_hostname }} -m {{ email }} --noninteractive --agree-tos"
 
-    # - name: Restart NGINX
-    #     service: nginx
-    #     state: restarted
-    #   become: yes
+    - name: Schedule a cron to run certbot renew at 12pm every day
+      cron:
+        name: "certbot renew"
+        minute: "0"
+        hour: "12"
+        job: "/usr/bin/certbot renew --quiet"
+
+    - name: Restart NGINX
+        service: nginx
+        state: restarted
+      become: yes
 
     # Firewall
     - name: UFW - Allow SSH connections
