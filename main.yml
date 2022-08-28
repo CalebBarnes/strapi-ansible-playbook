@@ -92,11 +92,20 @@
       args:
         chdir: "/home/{{ created_username }}"
         executable: /bin/bash
-        # creates: "~/.nvm/versions/node/*/bin/yarn"
+        creates: "/home/{{ created_username }}/.yarn/bin/pm2"
       become_user: "{{ created_username }}"
       become: true
 
-
+    - name: Add yarn global bin to PATH in profile
+      blockinfile:
+        path: "~/.profile"
+        block: |
+          # set PATH so it includes yarn global bin if it exists
+          if [ -d "$HOME/.yarn/bin" ] ; then
+              PATH="$HOME/.yarn/bin:$PATH"
+          fi
+      become_user: "{{ created_username }}"
+      become: true
 
     # # NGINX config
     # - name: Create nginx config file from template
