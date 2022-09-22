@@ -3,7 +3,8 @@
   vars:
     created_username: caleb
     node_version: lts/fermium
-    email: caleb@example.com
+    email: caleb.d.barnes@gmail.com
+    strapi_domain: strapi.calebbarnes.ca
   tasks:
     - name: Install aptitude
       apt:
@@ -107,29 +108,41 @@
       become_user: "{{ created_username }}"
       become: true
 
-    # # NGINX config
-    # - name: Create nginx config file from template
-    #   template:
-    #     src: /templates/strapi_site.conf.j2 # local src
-    #     dest: /etc/nginx/sites-available/strapi_site.conf # remote dest
-    #   become: yes
+    # NGINX config
+    - name: Create nginx config file from template
+      template:
+        src: ./templates/strapi_site.conf.j2 # local src
+        dest: /etc/nginx/sites-available/strapi_site.conf # remote dest
+      args: 
+        creates: /etc/nginx/sites-available/strapi_site.conf
+      become: true
 
-    # - name: Create symlink for NGINX config file
-    #   file:
-    #     src: /etc/nginx/sites-available/strapi_site.cfg
-    #     dest: /etc/nginx/sites-enabled/default
-    #     state: link
-    #   become: yes
+    - name: Create symlink for NGINX config file
+      file:
+        src: /etc/nginx/sites-available/strapi_site.conf
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+      become: true
 
-    # - name: Start NGINX
+    - name: Start NGINX
+      service:
+        name: nginx
+        state: started
+
+    # - name: Restart NGINX
     #   service:
     #     name: nginx
-    #     state: started
-    #   become: yes
+    #     state: restarted
+      # become: true
 
-    # - name: Initialize Certbot with the NGINX plugin
-    #   command: "sudo certbot --nginx -d {{ ansible_hostname }} -m {{ email }} --noninteractive --agree-tos"
-    #   become_user: "{{ created_username }}"
+    - name: Initialize Certbot with the NGINX plugin
+      shell: "sudo certbot --nginx -d {{ strapi_domain }} -m {{ email }} --noninteractive --agree-tos && touch .certbot_init_success"
+      args:
+        chdir: "/home/{{ created_username }}"
+        executable: /bin/bash
+        creates: "/home/{{ created_username }}/.certbot_init_success"
+      become_user: "{{ created_username }}"
+      become: true
 
     # - name: Schedule a cron to run certbot renew at 12pm every day
     #   cron:

@@ -1,8 +1,5 @@
 server {
-    server_name {{ ansible_hostname }};
-
-    listen [::]:443 ssl ipv6only=on; # managed by Certbot
-    listen 443 ssl; # managed by Certbot
+    server_name {{ strapi_domain }};
 
     # Proxy Config
     proxy_set_header Host $http_host;
@@ -14,7 +11,7 @@ server {
 }
 
 server {
-    if ($host = {{ ansible_hostname }}) {
+    if ($host = {{ strapi_domain }}) {
         return 301 https://$host$request_uri;
     } # managed by Certbot
 
@@ -22,7 +19,7 @@ server {
     listen 80;
     listen [::]:80;
 
-    server_name {{ ansible_hostname }};
+    server_name {{ strapi_domain }};
 
     return 404; # managed by Certbot
 }
