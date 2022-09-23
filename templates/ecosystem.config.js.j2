@@ -1,0 +1,25 @@
+module.exports = {
+  apps: [
+    {
+      name: 'strapi',
+      cwd: '/home/{{ created_username }}/{{ app }}',
+      script: 'yarn',
+      args: 'start',
+      watch: ["config", "src"],
+      ignoreWatch: ["node_modules", ".tmp", ".cache", "data", "database"],
+      env: {
+        NODE_ENV: '{{ NODE_ENV }}',
+        DATABASE_HOST: 'localhost', // database endpoint
+        DATABASE_PORT: '5432',
+        DATABASE_NAME: 'strapi', // DB name
+        DATABASE_USERNAME: 'strapi', // your username for psql
+        DATABASE_PASSWORD: '{{ DATABASE_PASSWORD }}', // your password for psql
+        SMTP_HOST: "smtp-relay.sendinblue.com",
+        SMTP_USERNAME: "{{ email }}",
+        SMTP_PASSWORD: "gQ6IzUy9NDOMR4C0",
+        EMAIL_ADDRESS_FROM: "{{ email }}",
+        EMAIL_ADDRESS_REPLY: "{{ email }}"
+      },
+    },
+  ],
+};
