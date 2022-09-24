@@ -125,7 +125,7 @@
 
     - name: create symlink pm2 in nvm folder to /usr/local/bin
       file:
-        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/pm2"
+        src: "/home/{{ created_username }}/.yarn/bin/pm2"
         dest: "/usr/local/bin/pm2"
         state: link
 
