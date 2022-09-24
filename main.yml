@@ -61,9 +61,9 @@
         state: latest
         update_cache: true
       become: true
-    
+
     - name: Install psycopg2 dependancy with pip3 (Required for postgres commands)
-      pip: 
+      pip:
         name: psycopg2-binary
       become_user: "{{ created_username }}"
       become: true
@@ -103,40 +103,31 @@
       become_user: "{{ created_username }}"
       become: true
 
+    - name: create symlink node in nvm folder to /usr/local/bin
+      file:
+        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/node"
+        dest: "/usr/local/bin/node"
+        state: link
+
+    - name: create symlink npm in nvm folder to /usr/local/bin
+      file:
+        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/npm"
+        dest: "/usr/local/bin/npm"
+        state: link
+
     - name: Install pm2
       npm:
         name: pm2
         global: yes
         state: present
-      # become_user: "{{ created_username }}"
+      become_user: "{{ created_username }}"
       become: true
 
-    - name: create symlink for npm bin in nvm folder to /usr/local/bin
+    - name: create symlink pm2 in nvm folder to /usr/local/bin
       file:
-        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin"
-        dest: "/usr/local/bin"
+        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/pm2"
+        dest: "/usr/local/bin/pm2"
         state: link
-
-
-    # - name: create symlink node in nvm folder to /usr/local/bin
-    #   file:
-    #     src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin"
-    #     dest: "/usr/local/bin/node"
-    #     state: absent
-
-    # - name: create symlink npm in nvm folder to /usr/local/bin
-    #   file:
-    #     src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/npm"
-    #     dest: "/usr/local/bin/npm"
-    #     state: absent
-
-
-
-    # - name: create symlink pm2 in nvm folder to /usr/local/bin
-    #   file:
-    #     src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/pm2"
-    #     dest: "/usr/local/bin/pm2"
-    #     state: link
 
     - name: Add yarn global bin to PATH in profile
       blockinfile:
@@ -193,22 +184,21 @@
 
     - name: Modify known hosts
       block:
-      - name: Fetch GitHub public key
-        command: ssh-keyscan -T 10 github.com
-        register: keyscan
-        become_user: "{{ created_username }}"
-        become: true
+        - name: Fetch GitHub public key
+          command: ssh-keyscan -T 10 github.com
+          register: keyscan
+          become_user: "{{ created_username }}"
+          become: true
 
-      - name: Add GitHub public key to ssh known_hosts
-        lineinfile:
-          path: "{{ KNOWN_HOSTS_PATH }}"
-          create: yes
-          line: "{{ item }}"
-        with_items: '{{ keyscan.stdout_lines }}'
-        become_user: "{{ created_username }}"
-        become: true
+        - name: Add GitHub public key to ssh known_hosts
+          lineinfile:
+            path: "{{ KNOWN_HOSTS_PATH }}"
+            create: yes
+            line: "{{ item }}"
+          with_items: "{{ keyscan.stdout_lines }}"
+          become_user: "{{ created_username }}"
+          become: true
       when: host_stat.rc == 1
-      
 
     - name: Add SSH public key to GitHub account
       uri:
@@ -233,7 +223,6 @@
         creates: "{{ CLONE_DEST }}"
       become_user: "{{ created_username }}"
       become: true
-
 
     # Strapi App and DB setup + PM2
     - name: Start postgresql service
@@ -328,7 +317,6 @@
         force: no
       become_user: "{{ created_username }}"
       become: true
-
 
     - name: Restart NGINX
       service:
