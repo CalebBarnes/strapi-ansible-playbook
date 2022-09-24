@@ -85,14 +85,14 @@
       become_user: "{{ created_username }}"
       become: true
 
-    # - name: Install yarn
-    #   shell: ". ~/.nvm/nvm.sh && npm install yarn -g"
-    #   args:
-    #     chdir: "/home/{{ created_username }}"
-    #     executable: /bin/bash
-    #     creates: "~/.nvm/versions/node/*/bin/yarn"
-    #   become_user: "{{ created_username }}"
-    #   become: true
+    - name: Install yarn
+      shell: ". ~/.nvm/nvm.sh && npm install yarn -g"
+      args:
+        chdir: "/home/{{ created_username }}"
+        executable: /bin/bash
+        creates: "~/.nvm/versions/node/*/bin/yarn"
+      become_user: "{{ created_username }}"
+      become: true
 
     - name: Get current node version
       shell: ". ~/.nvm/nvm.sh && node -v"
