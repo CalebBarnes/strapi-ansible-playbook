@@ -326,8 +326,9 @@
       become: true
 
     - name: Start strapi process via pm2 (ecosystem.config.js)
-      command: "pm2 startOrRestart ecosystem.config.js --env production"
+      shell: ". ~/.nvm/nvm.sh && pm2 startOrRestart ecosystem.config.js --env production"
       args:
+        executable: /bin/bash
         chdir: "/home/{{ created_username }}"
       become_user: "{{ created_username }}"
       become: true
