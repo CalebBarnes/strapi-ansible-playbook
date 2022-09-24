@@ -103,31 +103,40 @@
       become_user: "{{ created_username }}"
       become: true
 
-    - name: create symlink node in nvm folder to /usr/local/bin
-      file:
-        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/node"
-        dest: "/usr/local/bin/node"
-        state: link
-
-    - name: create symlink npm in nvm folder to /usr/local/bin
-      file:
-        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/npm"
-        dest: "/usr/local/bin/npm"
-        state: link
-
     - name: Install pm2
       npm:
         name: pm2
         global: yes
         state: present
-      become_user: "{{ created_username }}"
+      # become_user: "{{ created_username }}"
       become: true
 
-    - name: create symlink pm2 in nvm folder to /usr/local/bin
+    - name: create symlink for npm bin in nvm folder to /usr/local/bin
       file:
-        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/pm2"
-        dest: "/usr/local/bin/pm2"
+        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin"
+        dest: "/usr/local/bin"
         state: link
+
+
+    # - name: create symlink node in nvm folder to /usr/local/bin
+    #   file:
+    #     src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin"
+    #     dest: "/usr/local/bin/node"
+    #     state: absent
+
+    # - name: create symlink npm in nvm folder to /usr/local/bin
+    #   file:
+    #     src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/npm"
+    #     dest: "/usr/local/bin/npm"
+    #     state: absent
+
+
+
+    # - name: create symlink pm2 in nvm folder to /usr/local/bin
+    #   file:
+    #     src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/pm2"
+    #     dest: "/usr/local/bin/pm2"
+    #     state: link
 
     - name: Add yarn global bin to PATH in profile
       blockinfile:
@@ -311,6 +320,15 @@
         hour: "12"
         job: "/usr/bin/certbot renew --quiet"
       register: certcron
+
+    - name: Create error.html for nginx default error pages
+      template:
+        src: ./templates/error.html.j2 # local src
+        dest: ~/error.html # remote dest
+        force: no
+      become_user: "{{ created_username }}"
+      become: true
+
 
     - name: Restart NGINX
       service:
