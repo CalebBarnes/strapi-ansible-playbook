@@ -19,6 +19,12 @@ module.exports = {
         DATABASE_USERNAME: 'strapi', // your username for psql
         DATABASE_PASSWORD: '{{ DATABASE_PASSWORD }}', // your password for psql
 
+        GITHUB_REPO: "{{ GITHUB_REPO }}",
+        CLONE_DEST: "{{ CLONE_DEST }}",
+
+        PACKAGE_MANAGER: "yarn",
+        PM2_COMMAND: {{ PM2_COMMAND }},
+
         SMTP_HOST: "smtp-relay.sendinblue.com",
         SMTP_USERNAME: "{{ email }}",
         SMTP_PASSWORD: "gQ6IzUy9NDOMR4C0",

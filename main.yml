@@ -218,7 +218,7 @@
       become: true
 
     - name: Clone the repository
-      shell: GIT_SSH_COMMAND="ssh -i {{ KEY_PATH }} -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" {{ GIT_EXECUTABLE }} clone {{ GIT_REPO }} {{ CLONE_DEST }}
+      shell: GIT_SSH_COMMAND="ssh -i {{ KEY_PATH }} -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" {{ GIT_EXECUTABLE }} clone git@github.com:{{ GITHUB_REPO }}.git {{ CLONE_DEST }}
       args:
         creates: "{{ CLONE_DEST }}"
       become_user: "{{ created_username }}"
@@ -326,7 +326,7 @@
       become: true
 
     - name: Start strapi process via pm2 (ecosystem.config.js)
-      shell: ". ~/.nvm/nvm.sh && pm2 startOrRestart ecosystem.config.js --env production"
+      shell: ". ~/.nvm/nvm.sh && {{ PM2_COMMAND }}"
       args:
         executable: /bin/bash
         chdir: "/home/{{ created_username }}"
