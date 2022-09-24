@@ -1,19 +1,4 @@
 ---
-# - hosts: local
-#   vars:
-#     git_repo_url: git@github.com:Jambaree/bare-strapi-backend.git
-
-#   tasks:
-#     - name: Git pull strapi repo
-#       git:
-#         repo: "{{ git_repo_url }}"
-#         dest: "~/app"
-
-#     - name: Load SSH Key
-#       shell: "ssh-add ~/.ssh/id_rsa"
-#       args:
-#         executable: /bin/bash
-
 - hosts: webservers
   vars_files:
     - ./vars/main.yml
@@ -100,23 +85,49 @@
       become_user: "{{ created_username }}"
       become: true
 
-    - name: Install yarn
-      shell: ". ~/.nvm/nvm.sh && npm install yarn -g"
+    # - name: Install yarn
+    #   shell: ". ~/.nvm/nvm.sh && npm install yarn -g"
+    #   args:
+    #     chdir: "/home/{{ created_username }}"
+    #     executable: /bin/bash
+    #     creates: "~/.nvm/versions/node/*/bin/yarn"
+    #   become_user: "{{ created_username }}"
+    #   become: true
+
+    - name: Get current node version
+      shell: ". ~/.nvm/nvm.sh && node -v"
+      register: detected_node_version
       args:
         chdir: "/home/{{ created_username }}"
         executable: /bin/bash
-        creates: "~/.nvm/versions/node/*/bin/yarn"
       become_user: "{{ created_username }}"
       become: true
 
+    - name: create symlink node in nvm folder to /usr/local/bin
+      file:
+        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/node"
+        dest: "/usr/local/bin/node"
+        state: link
+
+    - name: create symlink npm in nvm folder to /usr/local/bin
+      file:
+        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/npm"
+        dest: "/usr/local/bin/npm"
+        state: link
+
     - name: Install pm2
-      shell: ". ~/.nvm/nvm.sh && yarn global add pm2"
-      args:
-        chdir: "/home/{{ created_username }}"
-        executable: /bin/bash
-        creates: "/home/{{ created_username }}/.yarn/bin/pm2"
+      npm:
+        name: pm2
+        global: yes
+        state: present
       become_user: "{{ created_username }}"
       become: true
+
+    - name: create symlink pm2 in nvm folder to /usr/local/bin
+      file:
+        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/pm2"
+        dest: "/usr/local/bin/pm2"
+        state: link
 
     - name: Add yarn global bin to PATH in profile
       blockinfile:
@@ -230,33 +241,21 @@
         regexp: "^local   all             postgres                                peer"
         state: present
         line: "local   all             postgres                                trust"
+      register: pgconf
 
     - name: Reload postgresql service
       service:
         name: postgresql
         state: reloaded
-      # become_user: "{{ created_username }}"
+      when: pgconf.changed
       become: true
-
-    # - name: Start postgresql service
-    #   service:
-    #     name: postgresql
-    #     state: started
-    #     enabled: yes
-    #   become_user: "{{ created_username }}"
-    #   become: true
 
     - name: Create postgres user
       postgresql_user:
         name: "strapi"
         db: "strapi"
         state: present
-        # port: 5432
-        # login_host: localhost
         role_attr_flags: CREATEDB,SUPERUSER
-        # ssl_mode: disable
-        # login_password: "{{ DATABASE_PASSWORD }}"
-        # password: ""
       become_user: "{{ created_username }}"
       become: true
 
@@ -265,8 +264,6 @@
         name: "strapi"
         owner: "strapi"
         state: present
-        # password: "{{ DATABASE_PASSWORD }}"
-
       become_user: "{{ created_username }}"
       become: true
 
@@ -304,7 +301,6 @@
         chdir: "/home/{{ created_username }}"
         executable: /bin/bash
         creates: "/etc/letsencrypt/.updated-options-ssl-nginx-conf-digest.txt"
-        # creates: "/home/{{ created_username }}/.certbot_init_success"
       become_user: "{{ created_username }}"
       become: true
 
@@ -321,6 +317,13 @@
         name: nginx
         state: restarted
       when: certcron.changed
+      become: true
+
+    - name: Start strapi process via pm2 (ecosystem.config.js)
+      command: "pm2 startOrRestart ecosystem.config.js --env production"
+      args:
+        chdir: "/home/{{ created_username }}"
+      become_user: "{{ created_username }}"
       become: true
 
     # Firewall
