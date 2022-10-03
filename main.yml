@@ -115,6 +115,12 @@
         dest: "/usr/local/bin/npm"
         state: link
 
+    - name: create symlink yarn in nvm folder to /usr/local/bin
+      file:
+        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/yarn"
+        dest: "/usr/local/bin/yarn"
+        state: link
+
     - name: Install pm2
       npm:
         name: pm2
@@ -326,10 +332,10 @@
       become: true
 
     - name: Start strapi process via pm2 (ecosystem.config.js)
-      shell: ". ~/.nvm/nvm.sh && {{ PM2_COMMAND }}"
+      command: "{{ PM2_COMMAND }}"
       args:
-        executable: /bin/bash
         chdir: "/home/{{ created_username }}"
+        # executable: /bin/bash
       become_user: "{{ created_username }}"
       become: true
 
