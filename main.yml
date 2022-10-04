@@ -1,5 +1,5 @@
 ---
-- hosts: webservers
+- hosts: "{{ host }}"
   vars_files:
     - ./vars/main.yml
   tasks:
@@ -34,6 +34,13 @@
         user: "{{ created_username }}"
         state: present
         key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+      become: true
+
+    - name: Copy keys from local authorized_keys file to remote authorized_keys
+      authorized_key:
+        user: "{{ created_username }}"
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/authorized_keys') }}"
       become: true
 
     - name: Disable password authentication for root
@@ -122,16 +129,17 @@
         state: link
 
     - name: Install pm2
-      npm:
-        name: pm2
-        global: yes
-        state: present
+      shell: ". ~/.nvm/nvm.sh && npm install pm2 -g"
+      args:
+        chdir: "/home/{{ created_username }}"
+        executable: /bin/bash
+        creates: "~/.nvm/versions/node/*/bin/pm2"
       become_user: "{{ created_username }}"
       become: true
 
     - name: create symlink pm2 in nvm folder to /usr/local/bin
       file:
-        src: "/home/{{ created_username }}/.yarn/bin/pm2"
+        src: "/home/{{ created_username }}/.nvm/versions/node/{{ detected_node_version['stdout'] }}/bin/pm2"
         dest: "/usr/local/bin/pm2"
         state: link
 
@@ -239,9 +247,23 @@
       become_user: "{{ created_username }}"
       become: true
 
+    - name: Get psql version
+      shell: ". ~/.nvm/nvm.sh && psql -V"
+      register: detected_psql_version  
+      # register: "{{ detected_psql_version.stdout[psql (PostgreSQL):.] }}" # simple sub string to get the major version 
+      args:
+        chdir: "/home/{{ created_username }}"
+        executable: /bin/bash
+      become_user: "{{ created_username }}"
+      become: true
+
+    - name: regex psql major version
+      set_fact:
+        psql_major_version: "{{ detected_psql_version | regex_findall('psql \\(PostgreSQL\\) (.+?)\\.') }}"
+
     - name: Update postgres pg_hba.conf
       lineinfile:
-        path: /etc/postgresql/12/main/pg_hba.conf
+        path: "/etc/postgresql/{{ psql_major_version[0] }}/main/pg_hba.conf"
         regexp: "^local   all             postgres                                peer"
         state: present
         line: "local   all             postgres                                trust"
@@ -257,7 +279,7 @@
     - name: Create postgres user
       postgresql_user:
         name: "strapi"
-        db: "strapi"
+        # db: "strapi"
         state: present
         role_attr_flags: CREATEDB,SUPERUSER
       become_user: "{{ created_username }}"

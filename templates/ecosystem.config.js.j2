@@ -11,7 +11,7 @@ module.exports = {
         NODE_ENV: '{{ NODE_ENV }}',
 
         PORT: 1338,
-        PUBLIC_URL: 'https://{{ strapi_domain }}'
+        PUBLIC_URL: 'https://{{ strapi_domain }}',
 
         DATABASE_HOST: 'localhost', // database endpoint
         DATABASE_PORT: '5432',
@@ -23,7 +23,7 @@ module.exports = {
         CLONE_DEST: "{{ CLONE_DEST }}",
 
         PACKAGE_MANAGER: "yarn",
-        PM2_COMMAND: {{ PM2_COMMAND }},
+        PM2_COMMAND: "{{ PM2_COMMAND }}",
 
         SMTP_HOST: "smtp-relay.sendinblue.com",
         SMTP_USERNAME: "{{ email }}",
